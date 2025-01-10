@@ -63,11 +63,12 @@
             color="green"
             track-color="grey-5"
             dark
+            :disable="true"
           />
         </div>
       </q-card>
-            <!-- Toggle Button -->
-            <q-card class="q-pa-md no-shadow q-mb-md bg-blue-1 cardd" bordered>
+        <!-- Toggle Button -->
+        <q-card class="q-pa-md no-shadow q-mb-md bg-blue-1 cardd" bordered>
         <div class="row items-center justify-between">
           <p class="text-weight-bold text-primary texttitle text text-h6">
             Tombol
@@ -104,6 +105,18 @@
         </div>
       </q-card>
 
+      <!-- Spacer Div -->
+      <div class="spacer"></div>
+
+      <!-- History Card -->
+      <div class="history-card">
+        <div class="history-title">Water Output History</div>
+        <div class="history-data animated">
+          <p>Total Water Output: <span class="highlight">{{ formattedTotalWaterOutput }}</span> Liters</p>
+        </div>
+        <button class="history-reset-btn" @click="confirmReset">Reset Data</button>
+      </div>
+
       <!-- current data Sensor -->
     </div>
 
@@ -119,6 +132,7 @@ import mqttjs from "mqtt";
 import Lottie from "src/components/lottie.vue";
 import * as animationData from "assets/flow.json";
 import * as animationData2 from "assets/flow2.json";
+import axios from 'axios';
 
 export default {
   components: {
@@ -138,7 +152,17 @@ export default {
       animationSpeed2: 2,
       deviceStatus: true, // Toggle state: false = OFF, true = ON
       buttonStatus: false,
+      totalWaterOutput: 0.0, // Track the total water output
+      lastUpdateTime: Date.now(), // To calculate time deltas
+      formattedTotalWaterOutputData: '',
     };
+  },
+
+  created() {
+  // Start an interval to send data to the backend every 10 seconds (adjust as needed)
+  this.intervalId = setInterval(() => {
+    this.sendData();
+  }, 10000);  // Send data every 10 seconds (you can adjust the interval as needed)
   },
 
   watch: {
@@ -153,6 +177,15 @@ export default {
   },
 
   mounted() {
+    // Fetch the initial history data
+    axios.get('http://localhost:3000/history')
+      .then(response => {
+        this.totalWaterOutput = response.data.totalWaterOutput;
+      })
+      .catch(error => {
+        console.error('Error fetching history:', error);
+      });
+
     const options = {
       username: "/smkpkl:smkpkl",
       password: "smkpkl",
@@ -216,6 +249,8 @@ export default {
         console.error("Error parsing message:", error);
       }
     });
+
+    this.startWaterFlowTracking();
   },
   methods: {
     handleAnimation: function (anim) {
@@ -248,6 +283,13 @@ export default {
 
     onManualToggleChange(newState) {
       console.log("Manual toggle changed to:", newState ? "ON" : "OFF");
+
+      if (newState && this.WATERFLOW > 0) {
+        // Calculate the output and add it to the total
+        const waterOutput = this.WATERFLOW * 0.001; // Example multiplier
+        this.totalWaterOutput += waterOutput;
+      }
+
       if (this.client && this.client.connected) {
         const topic = "gambar";
         const message = newState ? "Relay ON" : "Relay OFF";
@@ -262,7 +304,71 @@ export default {
       } else {
         console.warn("MQTT client is not connected");
       }
-    }
+    },
+
+    confirmReset() {
+    this.$q.notify({
+      message: "Are you sure you want to reset the water output history?",
+      color: "red",
+      icon: "warning",
+      position: "center",
+      actions: [
+        {
+          label: "Yes",
+          color: "white",
+          handler: () => {
+            this.totalWaterOutput = 0; // Reset the total output
+            this.$q.notify({
+              message: "Water output history has been reset.",
+              color: "positive",
+              icon: "check_circle",
+              position: "center",
+            });
+          },
+        },
+        {
+          label: "Cancel",
+          color: "white",
+        },
+      ],
+    });
+  },
+
+  sendData() {
+    const payload = { formattedTotalWaterOutput: this.formattedTotalWaterOutput };
+
+    fetch('https://228a-103-230-48-148.ngrok-free.app/history-data', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Data sent successfully:', data);
+    })
+    .catch((error) => {
+      console.error('Error sending data:', error);
+    });
+  },
+
+    // Start tracking water flow
+    startWaterFlowTracking() {
+      setInterval(() => {
+        const currentTime = Date.now();
+        const timeElapsed = (currentTime - this.lastUpdateTime) / 60000; // Convert ms to minutes
+        const flowRate = parseFloat(this.WATERFLOW); // Current flow rate (liters per minute)
+
+        if (!isNaN(flowRate) && flowRate > 0) {
+          // Increment total water output based on elapsed time
+          this.totalWaterOutput += flowRate * timeElapsed;
+        }
+
+        this.lastUpdateTime = currentTime; // Update last update time
+      }, 1); // Update every second
+    },
+
   },
   computed: {
     waterLevel() {
@@ -276,7 +382,37 @@ export default {
       if (this.waterLevel > 25) return "yellow";
       return "red";
     },
+
+    // Ensure total water output is always a rounded number
+    formattedTotalWaterOutput() {
+    return this.totalWaterOutput.toFixed(2); // Display 2 decimal places
+    },
   },
+
+  async updateTotalWaterOutput(newOutput) {
+      try {
+        const response = await axios.put('https://228a-103-230-48-148.ngrok-free.app/history', { totalWaterOutput: newOutput });
+        if (response.status === 200) {
+          console.log(response.data.message);
+          this.totalWaterOutput = newOutput;
+          // Add animation or other logic here as needed
+        }
+      } catch (error) {
+        console.error('Error updating history:', error);
+      }
+    },
+
+    async confirmReset() {
+      try {
+        const response = await axios.delete('https://228a-103-230-48-148.ngrok-free.app/history');
+        if (response.status === 200) {
+          console.log(response.data.message);
+          this.totalWaterOutput = 0.0;
+        }
+      } catch (error) {
+        console.error('Error resetting history:', error);
+      }
+    },
 };
 </script>
 
@@ -315,4 +451,79 @@ export default {
   width: 100%;
   transition: height 0.5s ease-in-out;
 }
+
+/* General Styling */
+.waterflow-card,
+.history-card {
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.waterflow-card {
+  background-color: #2196f3;
+  color: white;
+  text-align: center;
+}
+
+.history-card {
+  background-color: #f8f9fa;
+  color: #444;
+  text-align: center;
+}
+
+/* Spacer */
+.spacer {
+  height: 25px;
+}
+
+/* Titles */
+.waterflow-title,
+.history-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Highlighted Text */
+.highlight {
+  color: #ff5722;
+  font-weight: bold;
+}
+
+/* Reset Button */
+.history-reset-btn {
+  background-color: #ff5722;
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.history-reset-btn:hover {
+  background-color: #e64a19;
+}
+
+/* Animation for History Total Liters */
+@keyframes pop {
+  0% {
+    transform: scale(1);
+    color: #444;
+  }
+  50% {
+    transform: scale(1.2);
+    color: #ff5722;
+  }
+  100% {
+    transform: scale(1);
+    color: #444;
+  }
+}
+
+.history-data.animated .highlight {
+  animation: pop 0.6s ease-in-out;
+}
+
+
 </style>
