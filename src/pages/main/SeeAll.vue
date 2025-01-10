@@ -8,13 +8,23 @@
     <div v-if="$q.platform.is.mobile">
       <!-- dashboard title -->
       <!-- current data Sensor -->
+      <q-card class="q-pa-md no-shadow q-mb-md bg-blue-1 cardd" bordered>
+        <p class="text-weight-bold text-primary texttitle text text-h6">
+          Device 01
+        </p>
+        <p class="text-weight-bold text-caption text-grey-5 text">
+          Water is the driving force of all nature
+        </p>
+      </q-card>
 
       <q-card class="q-pa-md no-shadow q-mb-md bg-blue-1 cardd" bordered>
-        <div class="row">
+        <div class="row text-center flex flex-center">
           <p class="q-mb-md text-weight-bold text-caption text-primary text">
             Current Data Water Tank
           </p>
           <q-space />
+          <q-badge class="q-mb-md" v-if="DATASOIL < 30">ON</q-badge>
+          <q-badge class="q-mb-md bg-red-8" v-if="DATASOIL > 30">OFF</q-badge>
         </div>
         <div class="row q-gutter-md">
           <q-card class="tank-container no-shadow q-pa-sm col">
@@ -50,38 +60,24 @@
             </q-card-section>
           </q-card>
         </div>
+        <q-card class="col q-pa-md no-shadow q-mt-md bg-primary cardd" bordered>
+          <div class="row items-center justify-between">
+            <q-toggle
+              v-model="buttonStatus"
+              color="green"
+              track-color="grey-5"
+              dark
+              @update:model="onManualToggleChange"
+            />
+            <p class="texttitle text text-weight-bold text-white">
+              relay controller
+            </p>
+          </div>
+        </q-card>
       </q-card>
-      <div></div>
+
       <!-- Toggle Button -->
-      <q-card class="q-pa-md no-shadow q-mb-md bg-blue-1 cardd" bordered>
-        <div class="row items-center justify-between">
-          <p class="text-weight-bold text-primary texttitle text text-h6">
-            Indikator Pompa
-          </p>
-          <q-toggle
-            v-model="deviceStatus"
-            color="green"
-            track-color="grey-5"
-            dark
-            :disable="true"
-          />
-        </div>
-      </q-card>
-        <!-- Toggle Button -->
-        <q-card class="q-pa-md no-shadow q-mb-md bg-blue-1 cardd" bordered>
-        <div class="row items-center justify-between">
-          <p class="text-weight-bold text-primary texttitle text text-h6">
-            Tombol
-          </p>
-          <q-toggle
-            v-model="buttonStatus"
-            color="green"
-            track-color="grey-5"
-            dark
-            @update:model="onManualToggleChange"
-          />
-        </div>
-      </q-card>
+
       <q-card class="no-shadow bg-blue-2 q-mt-md" style="position: relative">
         <lottie
           class="flex flex-center"
@@ -112,9 +108,15 @@
       <div class="history-card">
         <div class="history-title">Water Output History</div>
         <div class="history-data animated">
-          <p>Total Water Output: <span class="highlight">{{ formattedTotalWaterOutput }}</span> Liters</p>
+          <p>
+            Total Water Output:
+            <span class="highlight">{{ formattedTotalWaterOutput }}</span>
+            Liters
+          </p>
         </div>
-        <button class="history-reset-btn" @click="confirmReset">Reset Data</button>
+        <button class="history-reset-btn" @click="confirmReset">
+          Reset Data
+        </button>
       </div>
 
       <!-- current data Sensor -->
@@ -132,7 +134,7 @@ import mqttjs from "mqtt";
 import Lottie from "src/components/lottie.vue";
 import * as animationData from "assets/flow.json";
 import * as animationData2 from "assets/flow2.json";
-import axios from 'axios';
+import axios from "axios";
 
 export default {
   components: {
@@ -140,7 +142,7 @@ export default {
   },
   data() {
     return {
-      DATASOIL: "0",
+      DATASOIL: "40",
       WATERFLOW: "0",
       client: null,
       message: "",
@@ -150,19 +152,19 @@ export default {
       animationSpeed: 2,
       defaultOptions2: { animationData: animationData2.default },
       animationSpeed2: 2,
-      deviceStatus: true, // Toggle state: false = OFF, true = ON
+
       buttonStatus: false,
       totalWaterOutput: 0.0, // Track the total water output
       lastUpdateTime: Date.now(), // To calculate time deltas
-      formattedTotalWaterOutputData: '',
+      formattedTotalWaterOutputData: "",
     };
   },
 
   created() {
-  // Start an interval to send data to the backend every 10 seconds (adjust as needed)
-  this.intervalId = setInterval(() => {
-    this.sendData();
-  }, 10000);  // Send data every 10 seconds (you can adjust the interval as needed)
+    // Start an interval to send data to the backend every 10 seconds (adjust as needed)
+    this.intervalId = setInterval(() => {
+      this.sendData();
+    }, 10000); // Send data every 10 seconds (you can adjust the interval as needed)
   },
 
   watch: {
@@ -173,17 +175,18 @@ export default {
 
     buttonStatus(newStatus) {
       console.log("Device is now:", newStatus ? "ON" : "OFF");
-    }
+    },
   },
 
   mounted() {
     // Fetch the initial history data
-    axios.get('http://localhost:3000/history')
-      .then(response => {
+    axios
+      .get("http://localhost:3000/history")
+      .then((response) => {
         this.totalWaterOutput = response.data.totalWaterOutput;
       })
-      .catch(error => {
-        console.error('Error fetching history:', error);
+      .catch((error) => {
+        console.error("Error fetching history:", error);
       });
 
     const options = {
@@ -307,51 +310,53 @@ export default {
     },
 
     confirmReset() {
-    this.$q.notify({
-      message: "Are you sure you want to reset the water output history?",
-      color: "red",
-      icon: "warning",
-      position: "center",
-      actions: [
-        {
-          label: "Yes",
-          color: "white",
-          handler: () => {
-            this.totalWaterOutput = 0; // Reset the total output
-            this.$q.notify({
-              message: "Water output history has been reset.",
-              color: "positive",
-              icon: "check_circle",
-              position: "center",
-            });
+      this.$q.notify({
+        message: "Are you sure you want to reset the water output history?",
+        color: "red",
+        icon: "warning",
+        position: "center",
+        actions: [
+          {
+            label: "Yes",
+            color: "white",
+            handler: () => {
+              this.totalWaterOutput = 0; // Reset the total output
+              this.$q.notify({
+                message: "Water output history has been reset.",
+                color: "positive",
+                icon: "check_circle",
+                position: "center",
+              });
+            },
           },
-        },
-        {
-          label: "Cancel",
-          color: "white",
-        },
-      ],
-    });
-  },
+          {
+            label: "Cancel",
+            color: "white",
+          },
+        ],
+      });
+    },
 
-  sendData() {
-    const payload = { formattedTotalWaterOutput: this.formattedTotalWaterOutput };
+    sendData() {
+      const payload = {
+        formattedTotalWaterOutput: this.formattedTotalWaterOutput,
+      };
 
-    fetch('https://228a-103-230-48-148.ngrok-free.app/history-data', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Data sent successfully:', data);
-    })
-    .catch((error) => {
-      console.error('Error sending data:', error);
-    });
-  },
+      fetch("https://228a-103-230-48-148.ngrok-free.app/history-data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("Data sent successfully:", data);
+        })
+        .catch((error) => {
+          console.error("Error sending data:", error);
+        });
+    },
 
     // Start tracking water flow
     startWaterFlowTracking() {
@@ -368,7 +373,6 @@ export default {
         this.lastUpdateTime = currentTime; // Update last update time
       }, 1); // Update every second
     },
-
   },
   computed: {
     waterLevel() {
@@ -385,34 +389,39 @@ export default {
 
     // Ensure total water output is always a rounded number
     formattedTotalWaterOutput() {
-    return this.totalWaterOutput.toFixed(2); // Display 2 decimal places
+      return this.totalWaterOutput.toFixed(2); // Display 2 decimal places
     },
   },
 
   async updateTotalWaterOutput(newOutput) {
-      try {
-        const response = await axios.put('https://228a-103-230-48-148.ngrok-free.app/history', { totalWaterOutput: newOutput });
-        if (response.status === 200) {
-          console.log(response.data.message);
-          this.totalWaterOutput = newOutput;
-          // Add animation or other logic here as needed
-        }
-      } catch (error) {
-        console.error('Error updating history:', error);
+    try {
+      const response = await axios.put(
+        "https://228a-103-230-48-148.ngrok-free.app/history",
+        { totalWaterOutput: newOutput }
+      );
+      if (response.status === 200) {
+        console.log(response.data.message);
+        this.totalWaterOutput = newOutput;
+        // Add animation or other logic here as needed
       }
-    },
+    } catch (error) {
+      console.error("Error updating history:", error);
+    }
+  },
 
-    async confirmReset() {
-      try {
-        const response = await axios.delete('https://228a-103-230-48-148.ngrok-free.app/history');
-        if (response.status === 200) {
-          console.log(response.data.message);
-          this.totalWaterOutput = 0.0;
-        }
-      } catch (error) {
-        console.error('Error resetting history:', error);
+  async confirmReset() {
+    try {
+      const response = await axios.delete(
+        "https://228a-103-230-48-148.ngrok-free.app/history"
+      );
+      if (response.status === 200) {
+        console.log(response.data.message);
+        this.totalWaterOutput = 0.0;
       }
-    },
+    } catch (error) {
+      console.error("Error resetting history:", error);
+    }
+  },
 };
 </script>
 
@@ -524,6 +533,4 @@ export default {
 .history-data.animated .highlight {
   animation: pop 0.6s ease-in-out;
 }
-
-
 </style>
