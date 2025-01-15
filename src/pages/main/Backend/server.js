@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const ChartJSNodeCanvas = require('chartjs-node-canvas');
 
 const app = express();
 app.use(cors());

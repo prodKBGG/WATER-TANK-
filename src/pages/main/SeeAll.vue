@@ -119,14 +119,8 @@
         </button>
       </div>
 
-      <!-- Chart -->
-      <q-card class="q-mt-md">
-        <q-chart
-          type="bar"
-          :data="chartData"
-          :options="chartOptions"
-        />
-      </q-card>
+      <!-- Spacer Div -->
+      <div class="spacer"></div>
 
       <!-- Save Data Button -->
       <q-btn
@@ -208,26 +202,46 @@ export default {
       lastUpdateTime: Date.now(), // To calculate time deltas
       formattedTotalWaterOutputData: "",
       chartData: {
-        labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-        datasets: [{
-          label: 'Water Output',
-          backgroundColor: '#42A5F5',
-          data: []
-        }]
+        labels: [], // Chart labels will be populated based on your data
+        datasets: [
+          {
+            label: 'Data',
+            data: [], // Chart data points
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+          }
+        ]
       },
       chartOptions: {
         responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          xAxes: [{
-            stacked: true
-          }],
-          yAxes: [{
-            stacked: true
-          }]
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+          },
         },
-        legend: {
-          display: true
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false,
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Date'
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Value'
+            }
+          }
         }
       },
       showSaveData: false,
@@ -438,9 +452,13 @@ export default {
       });
 },
 
-    updateChart(weeklyData) {
-      this.chartData.labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-      this.chartData.datasets[0].data = weeklyData.map(dayData => dayData.waterOutput);
+    updateChart() {
+          // Logic to fetch or process data based on the selected date
+          // You can fetch new data and update `chartData` here
+          console.log('Date selected:', this.selectedDate);
+          // Example data update:
+          this.chartData.labels = [/* Your dynamic labels based on selectedDate */];
+          this.chartData.datasets[0].data = [/* Your dynamic data based on selectedDate */];
     },
 
     showSaveDataDialog() {
