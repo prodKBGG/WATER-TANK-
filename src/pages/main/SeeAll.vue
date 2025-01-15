@@ -70,7 +70,7 @@
               @update:model="onManualToggleChange"
             />
             <p class="texttitle text text-weight-bold text-white">
-              relay controller
+              Relay Controller
             </p>
           </div>
         </q-card>
@@ -119,6 +119,56 @@
         </button>
       </div>
 
+      <!-- Chart -->
+      <q-card class="q-mt-md">
+        <q-chart
+          type="bar"
+          :data="chartData"
+          :options="chartOptions"
+        />
+      </q-card>
+
+      <!-- Save Data Button -->
+      <q-btn
+        class="save-button"
+        label="Save Data"
+        color="white"
+        text-color="black"
+        icon="save"
+        @click="showSaveDataDialog"
+        size="sm"
+      />
+
+      <!-- Save Data Form -->
+      <q-dialog v-model="showSaveData" persistent>
+        <q-card>
+          <q-card-section>
+            <q-form>
+              <q-input
+                filled
+                label="Total Water Level"
+                v-model="formData.waterLevel"
+                readonly
+              />
+              <q-input
+                filled
+                label="Total Water Output"
+                v-model="formData.waterOutput"
+                readonly
+              />
+              <q-date v-model="formData.date" label="Date" :auto-save="false" />
+            </q-form>
+          </q-card-section>
+          <q-card-actions>
+            <q-btn label="Submit" color="primary" @click="submitData" />
+            <q-btn label="Cancel" flat @click="showSaveData = false" />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
+      <!-- Spacer Div -->
+      <div class="spacer"></div>
+
       <!-- current data Sensor -->
     </div>
 
@@ -142,7 +192,8 @@ export default {
   },
   data() {
     return {
-      DATASOIL: "40",
+      DATASOIL: "",
+      WATERLEVEL: "",
       WATERFLOW: "0",
       client: null,
       message: "",
@@ -152,19 +203,41 @@ export default {
       animationSpeed: 2,
       defaultOptions2: { animationData: animationData2.default },
       animationSpeed2: 2,
-
       buttonStatus: false,
       totalWaterOutput: 0.0, // Track the total water output
       lastUpdateTime: Date.now(), // To calculate time deltas
       formattedTotalWaterOutputData: "",
+      chartData: {
+        labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+        datasets: [{
+          label: 'Water Output',
+          backgroundColor: '#42A5F5',
+          data: []
+        }]
+      },
+      chartOptions: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          xAxes: [{
+            stacked: true
+          }],
+          yAxes: [{
+            stacked: true
+          }]
+        },
+        legend: {
+          display: true
+        }
+      },
+      showSaveData: false,
+      formData: {
+        waterLevel: '',
+        waterOutput: '',
+        date: '',
+      },
+      dailyData: [],
     };
-  },
-
-  created() {
-    // Start an interval to send data to the backend every 10 seconds (adjust as needed)
-    this.intervalId = setInterval(() => {
-      this.sendData();
-    }, 10000); // Send data every 10 seconds (you can adjust the interval as needed)
   },
 
   watch: {
@@ -176,18 +249,27 @@ export default {
     buttonStatus(newStatus) {
       console.log("Device is now:", newStatus ? "ON" : "OFF");
     },
+
+    totalWaterOutput() {
+      this.updateData();
+    },
+
+     // Automatically update waterOutput with formattedTotalWaterOutput
+      formattedTotalWaterOutput(newValue) {
+      this.formData.waterOutput = newValue;
+    },
+    // Automatically update waterLevel with current waterLevel
+      waterLevel(newValue) {
+      this.formData.waterLevel = newValue;
+    },
   },
 
   mounted() {
-    // Fetch the initial history data
-    axios
-      .get("http://localhost:3000/history")
-      .then((response) => {
-        this.totalWaterOutput = response.data.totalWaterOutput;
-      })
-      .catch((error) => {
-        console.error("Error fetching history:", error);
-      });
+    // Fetch current data from the backend in Vue
+    axios.get("http://localhost:3000/data").then((response) => {
+      this.totalWaterOutput = response.data.totalWaterOutput;
+      this.updateChart(response.data.weeklyData); // Update chart with historical data
+    });
 
     const options = {
       username: "/smkpkl:smkpkl",
@@ -337,25 +419,96 @@ export default {
       });
     },
 
-    sendData() {
-      const payload = {
-        formattedTotalWaterOutput: this.formattedTotalWaterOutput,
+    updateData() {
+    const dataToSend = {
+      totalWaterOutput: this.totalWaterOutput,
+    };
+
+   // Sending POST request to backend
+   axios.post("http://localhost:3000/data", dataToSend)
+      .then(response => {
+        if (response.status === 200) {
+          console.log("Data updated successfully:", response.data);
+        } else {
+          console.error("Update failed:", response);
+        }
+      })
+      .catch(error => {
+        console.error("Error during data update:", error.response ? error.response.data : error.message);
+      });
+},
+
+    updateChart(weeklyData) {
+      this.chartData.labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      this.chartData.datasets[0].data = weeklyData.map(dayData => dayData.waterOutput);
+    },
+
+    showSaveDataDialog() {
+      this.showSaveData = true;
+      this.formData.waterLevel = this.DATASOIL; // Pre-fill waterLevel
+      this.formData.waterOutput = this.formattedTotalWaterOutput; // Pre-fill waterOutput
+      this.formData.date = this.getSelectedDate(); // Get date from calendar
+    },
+
+    submitData () {
+      if (!this.formData.waterOutput || !this.formData.date || !this.formData.waterLevel ) {
+        this.$q.notify({
+          message: "All fields must be provided",
+          color: "negative",
+          icon: "warning",
+          position: "center",
+        });
+        return;
+      }
+
+      const dataToSend = {
+        dailyOutput: this.formData.waterOutput,
+        waterLevel: this.formData.waterLevel,
+        date: this.formData.date,  // Date from the calendar formatted as YYYY-MM-DD
       };
 
-      fetch("https://228a-103-230-48-148.ngrok-free.app/history-data", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log("Data sent successfully:", data);
+      axios.post("http://localhost:3000/save-daily-data", dataToSend)
+        .then(response => {
+          if (response.status === 200) {
+            console.log("Data saved successfully:", response.data);
+            this.$q.notify({
+              message: "Data saved successfully",
+              color: "positive",
+              icon: "check_circle",
+              position: "center",
+            });
+            this.showSaveData = false;
+          } else {
+            console.error("Save failed:", response);
+          }
         })
-        .catch((error) => {
-          console.error("Error sending data:", error);
+        .catch(error => {
+          console.error("Error during form submission:", error.response ? error.response.data : error.message);
+          this.$q.notify({
+            message: "Error during form submission",
+            color: "negative",
+            icon: "warning",
+            position: "center",
+          });
         });
+    },
+
+    getSelectedDate() {
+      // Get the selected date from the calendar
+      const selectedDate = this.$refs.calendar.value;
+      if (selectedDate) {
+        const localDate = new Date(selectedDate);  // Local time selected from the calendar
+        console.log("Local Date:", localDate);  // Log local date for debugging
+        const utcDate = new Date(localDate.toUTCString());  // Convert to UTC
+        console.log("UTC Date:", utcDate);  // Log UTC date for debugging
+        utcDate.setHours(0, 0, 0, 0);  // Ensure date is set to midnight in UTC
+        return utcDate;  // Return the UTC formatted date with 00:00:00 as midnight
+      }
+      return null;
+    },
+
+    openCalendar() {
+      this.$refs.calendar.open();
     },
 
     // Start tracking water flow
@@ -366,12 +519,15 @@ export default {
         const flowRate = parseFloat(this.WATERFLOW); // Current flow rate (liters per minute)
 
         if (!isNaN(flowRate) && flowRate > 0) {
-          // Increment total water output based on elapsed time
-          this.totalWaterOutput += flowRate * timeElapsed;
-        }
+          // Increment total water output
+          this.totalWaterOutput += flowRate * timeElapsed; // Add the output since the last update
+          this.lastUpdateTime = currentTime; // Update the last update time
 
-        this.lastUpdateTime = currentTime; // Update last update time
-      }, 1); // Update every second
+          // Format the total output for display
+          this.formattedTotalWaterOutput = this.totalWaterOutput.toFixed(2); // Keep 2 decimal places
+          console.log(`Water output updated: ${this.formattedTotalWaterOutput} liters`);
+        }
+      }, 1000); // Update every second (adjust as needed)
     },
   },
   computed: {
@@ -393,26 +549,26 @@ export default {
     },
   },
 
-  async updateTotalWaterOutput(newOutput) {
-    try {
-      const response = await axios.put(
-        "https://228a-103-230-48-148.ngrok-free.app/history",
-        { totalWaterOutput: newOutput }
-      );
-      if (response.status === 200) {
-        console.log(response.data.message);
-        this.totalWaterOutput = newOutput;
-        // Add animation or other logic here as needed
-      }
-    } catch (error) {
-      console.error("Error updating history:", error);
-    }
-  },
+  // async updateTotalWaterOutput(newOutput) {
+  //   try {
+  //     const response = await axios.put(
+  //       "http://localhost:3000/history",
+  //       { totalWaterOutput: newOutput }
+  //     );
+  //     if (response.status === 200) {
+  //       console.log(response.data.message);
+  //       this.totalWaterOutput = newOutput;
+  //       // Add animation or other logic here as needed
+  //     }
+  //   } catch (error) {
+  //     console.error("Error updating history:", error);
+  //   }
+  // },
 
   async confirmReset() {
     try {
       const response = await axios.delete(
-        "https://228a-103-230-48-148.ngrok-free.app/history"
+        "http://localhost:3000/history"
       );
       if (response.status === 200) {
         console.log(response.data.message);
@@ -533,4 +689,28 @@ export default {
 .history-data.animated .highlight {
   animation: pop 0.6s ease-in-out;
 }
+
+.save-button {
+  background-color: white;  /* Button background color set to white */
+  color: black;             /* Font color set to black */
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  border: 1px solid black; /* Adds border to the button */
+}
+
+.save-button:hover {
+  background-color: #f0f0f0; /* Lighter shade on hover */
+  transform: scale(1.05);     /* Slight scaling on hover */
+}
+
+.save-button .q-icon {
+  margin-right: 8px;          /* Spacing between icon and text */
+}
+
 </style>
