@@ -26,6 +26,7 @@
           ><i class="bi bi-house-door-fill text-h5"></i
         ></q-route-tab>
         <q-route-tab icon="devices" to="/AllDevices" name="remote" />
+        <q-route-tab icon="history" to="/DevicesHistory" name="history" />
       </q-tabs>
     </q-footer>
 

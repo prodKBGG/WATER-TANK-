@@ -31,12 +31,12 @@
       <q-card class="q-pa-md no-shadow q-mb-md bg-blue-1 cardd" bordered>
         <div class="row">
           <p class="q-mb-md text-weight-bold text-caption text-primary text">
-            Current Data Water Tank
+            Device 01
           </p>
           <q-space />
           <div
             class="text text-h6 q-mb-md text-caption text-primary text text-weight-bold"
-            @click="$router.push('/SeeAll')"
+            @click="$router.push('/Device01')"
           >
             See details
             <q-icon name="arrow_right"></q-icon>
@@ -76,34 +76,100 @@
             </q-card-section>
           </q-card>
         </div>
+        <q-card class="no-shadow bg-blue-2 q-mt-md" style="position: relative">
+          <lottie
+            class="flex flex-center"
+            style="width: 100%"
+            :options="defaultOptions"
+            transition-show="fade"
+            transition-hide="fade"
+          />
+          <!-- Teks di atas Lottie -->
+          <div
+            style="
+              position: absolute;
+              top: 40%;
+              left: 80%;
+              color: white;
+              font-size: 13px;
+              font-weight: bold;
+            "
+          >
+            {{ WATERFLOW }}/M
+          </div>
+        </q-card>
       </q-card>
-      <div></div>
-      <q-card
-        class="no-shadow bg-blue-2 q-mt-md"
-        style="position: relative"
-      >
-        <lottie
-          class="flex flex-center"
-          style="width: 100%"
-          :options="defaultOptions"
-          transition-show="fade"
-          transition-hide="fade"
-        />
-        <!-- Teks di atas Lottie -->
-        <div
-          style="
-            position: absolute;
-            top: 40%;
-            left: 80%;
-            color: white;
-            font-size: 13px;
-            font-weight: bold;
-          "
-        >
-          {{ WATERFLOW }}/M
+      <q-card class="q-pa-md no-shadow q-mb-md bg-blue-1 cardd" bordered>
+        <div class="row">
+          <p class="q-mb-md text-weight-bold text-caption text-primary text">
+            Device 02
+          </p>
+          <q-space />
+          <div
+            class="text text-h6 q-mb-md text-caption text-primary text text-weight-bold"
+            @click="$router.push('/Device02')"
+          >
+            See details
+            <q-icon name="arrow_right"></q-icon>
+          </div>
         </div>
+        <div class="row q-gutter-md">
+          <q-card class="tank-container no-shadow q-pa-sm col">
+            <div class="tank">
+              <div
+                class="water"
+                :style="{
+                  height: waterLevel + '%',
+                  backgroundColor: waterColor,
+                }"
+              ></div>
+            </div>
+            <q-card-section>
+              <div class="text-center text text-weight-bold textcoy">
+                <p>Water Level {{ DATASOIL }}%</p>
+              </div>
+            </q-card-section>
+          </q-card>
+          <q-card class="tank-container no-shadow q-pa-sm col">
+            <div class="tank">
+              <div
+                class="water"
+                :style="{
+                  height: waterLevel + '%',
+                  backgroundColor: waterColor,
+                }"
+              ></div>
+            </div>
+            <q-card-section>
+              <div class="text-center text text-weight-bold textcoy">
+                <p>Water Level {{ DATASOIL }}%</p>
+              </div>
+            </q-card-section>
+          </q-card>
+        </div>
+        <q-card class="no-shadow bg-blue-2 q-mt-md" style="position: relative">
+          <lottie
+            class="flex flex-center"
+            style="width: 100%"
+            :options="defaultOptions"
+            transition-show="fade"
+            transition-hide="fade"
+          />
+          <!-- Teks di atas Lottie -->
+          <div
+            style="
+              position: absolute;
+              top: 40%;
+              left: 80%;
+              color: white;
+              font-size: 13px;
+              font-weight: bold;
+            "
+          >
+            {{ WATERFLOW }}/M
+          </div>
+        </q-card>
       </q-card>
-
       <!-- current data Sensor -->
     </div>
 

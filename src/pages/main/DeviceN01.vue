@@ -15,6 +15,17 @@
         <p class="text-weight-bold text-caption text-grey-5 text">
           Water is the driving force of all nature
         </p>
+        <q-space />
+        <div>
+          <q-btn
+            class="bg-primary text-capitalize text text-weight-bold"
+            label="Save Data"
+            text-color="white"
+            icon="save"
+            @click="showSaveDataDialog"
+            size="md"
+          />
+        </div>
       </q-card>
 
       <q-card class="q-pa-md no-shadow q-mb-md bg-blue-1 cardd" bordered>
@@ -63,11 +74,11 @@
         <q-card class="col q-pa-md no-shadow q-mt-md bg-primary cardd" bordered>
           <div class="row items-center justify-between">
             <q-toggle
-              v-model="buttonStatus"
+              v-model="relayStatus"
               color="green"
               track-color="grey-5"
               dark
-              @update:model="onManualToggleChange"
+              @update:model-value="toggleRelay"
             />
             <p class="texttitle text text-weight-bold text-white">
               Relay Controller
@@ -110,11 +121,13 @@
         <div class="history-data animated">
           <p>
             Total Water Output:
-            <span class="highlight">{{ formattedTotalWaterOutput }}</span>
+            <span class="highlight text-primary">{{
+              formattedTotalWaterOutput
+            }}</span>
             Liters
           </p>
         </div>
-        <button class="history-reset-btn" @click="confirmReset">
+        <button class="history-reset-btn bg-primary" @click="confirmReset">
           Reset Data
         </button>
       </div>
@@ -123,34 +136,39 @@
       <div class="spacer"></div>
 
       <!-- Save Data Button -->
-      <q-btn
-        class="save-button"
-        label="Save Data"
-        color="white"
-        text-color="black"
-        icon="save"
-        @click="showSaveDataDialog"
-        size="sm"
-      />
 
       <!-- Save Data Form -->
       <q-dialog v-model="showSaveData" persistent>
-        <q-card>
+        <q-card class="q-pa-sm">
           <q-card-section>
-            <q-form>
+            <q-form class="row q-gutter-md flex flex-center">
               <q-input
-                filled
+                label="Device Name"
+                v-model="formData.deviceName"
+                readonly
+                outlined
+                class="col-12"
+              />
+              <q-input
                 label="Total Water Level"
                 v-model="formData.waterLevel"
                 readonly
+                outlined
+                class="col-12"
               />
               <q-input
-                filled
                 label="Total Water Output"
                 v-model="formData.waterOutput"
+                outlined
                 readonly
+                class="col-12"
               />
-              <q-date v-model="formData.date" label="Date" :auto-save="false" />
+              <q-date
+                v-model="formData.date"
+                label="Date"
+                :auto-save="false"
+                style="max-width: 300px"
+              />
             </q-form>
           </q-card-section>
           <q-card-actions>
@@ -186,6 +204,7 @@ export default {
   },
   data() {
     return {
+      deviceName: "N-01",
       DATASOIL: "",
       WATERLEVEL: "",
       WATERFLOW: "0",
@@ -205,50 +224,51 @@ export default {
         labels: [], // Chart labels will be populated based on your data
         datasets: [
           {
-            label: 'Data',
+            label: "Data",
             data: [], // Chart data points
-            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1
-          }
-        ]
+            backgroundColor: "rgba(54, 162, 235, 0.5)",
+            borderColor: "rgba(54, 162, 235, 1)",
+            borderWidth: 1,
+          },
+        ],
       },
       chartOptions: {
         responsive: true,
         plugins: {
           legend: {
-            position: 'top',
+            position: "top",
           },
           tooltip: {
-            mode: 'index',
+            mode: "index",
             intersect: false,
           },
         },
         interaction: {
-          mode: 'nearest',
-          axis: 'x',
+          mode: "nearest",
+          axis: "x",
           intersect: false,
         },
         scales: {
           x: {
             title: {
               display: true,
-              text: 'Date'
-            }
+              text: "Date",
+            },
           },
           y: {
             title: {
               display: true,
-              text: 'Value'
-            }
-          }
-        }
+              text: "Value",
+            },
+          },
+        },
       },
       showSaveData: false,
       formData: {
-        waterLevel: '',
-        waterOutput: '',
-        date: '',
+        deviceName: "",
+        waterLevel: "",
+        waterOutput: "",
+        date: "",
       },
       dailyData: [],
     };
@@ -260,20 +280,18 @@ export default {
       this.deviceStatus = newLevel < 30;
     },
 
-    buttonStatus(newStatus) {
-      console.log("Device is now:", newStatus ? "ON" : "OFF");
-    },
+    // Watch the buttonStatus and send message if it's ON
 
     totalWaterOutput() {
       this.updateData();
     },
 
-     // Automatically update waterOutput with formattedTotalWaterOutput
-      formattedTotalWaterOutput(newValue) {
+    // Automatically update waterOutput with formattedTotalWaterOutput
+    formattedTotalWaterOutput(newValue) {
       this.formData.waterOutput = newValue;
     },
     // Automatically update waterLevel with current waterLevel
-      waterLevel(newValue) {
+    waterLevel(newValue) {
       this.formData.waterLevel = newValue;
     },
   },
@@ -352,6 +370,16 @@ export default {
     this.startWaterFlowTracking();
   },
   methods: {
+    toggleRelay(relayStatus) {
+      const message = relayStatus ? "Relay ON" : "Relay OFF";
+      console.log(message);
+
+      // Mengirimkan pesan ON atau OFF
+      if (this.client && this.isConnected) {
+        this.client.publish("gambar", message);
+        console.log(`Message sent: ${message}`);
+      }
+    },
     handleAnimation: function (anim) {
       this.anim = anim;
     },
@@ -378,31 +406,6 @@ export default {
           }
         });
       });
-    },
-
-    onManualToggleChange(newState) {
-      console.log("Manual toggle changed to:", newState ? "ON" : "OFF");
-
-      if (newState && this.WATERFLOW > 0) {
-        // Calculate the output and add it to the total
-        const waterOutput = this.WATERFLOW * 0.001; // Example multiplier
-        this.totalWaterOutput += waterOutput;
-      }
-
-      if (this.client && this.client.connected) {
-        const topic = "gambar";
-        const message = newState ? "Relay ON" : "Relay OFF";
-
-        this.client.publish(topic, message, (err) => {
-          if (err) {
-            console.error("Failed to publish message:", err);
-          } else {
-            console.log(`Published "${message}" to topic "${topic}"`);
-          }
-        });
-      } else {
-        console.warn("MQTT client is not connected");
-      }
     },
 
     confirmReset() {
@@ -434,42 +437,56 @@ export default {
     },
 
     updateData() {
-    const dataToSend = {
-      totalWaterOutput: this.totalWaterOutput,
-    };
+      const dataToSend = {
+        totalWaterOutput: this.totalWaterOutput,
+      };
 
-   // Sending POST request to backend
-   axios.post("http://localhost:3000/data", dataToSend)
-      .then(response => {
-        if (response.status === 200) {
-          console.log("Data updated successfully:", response.data);
-        } else {
-          console.error("Update failed:", response);
-        }
-      })
-      .catch(error => {
-        console.error("Error during data update:", error.response ? error.response.data : error.message);
-      });
-},
+      // Sending POST request to backend
+      axios
+        .post("http://localhost:3000/data", dataToSend)
+        .then((response) => {
+          if (response.status === 200) {
+            console.log("Data updated successfully:", response.data);
+          } else {
+            console.error("Update failed:", response);
+          }
+        })
+        .catch((error) => {
+          console.error(
+            "Error during data update:",
+            error.response ? error.response.data : error.message
+          );
+        });
+    },
 
     updateChart() {
-          // Logic to fetch or process data based on the selected date
-          // You can fetch new data and update `chartData` here
-          console.log('Date selected:', this.selectedDate);
-          // Example data update:
-          this.chartData.labels = [/* Your dynamic labels based on selectedDate */];
-          this.chartData.datasets[0].data = [/* Your dynamic data based on selectedDate */];
+      // Logic to fetch or process data based on the selected date
+      // You can fetch new data and update `chartData` here
+      console.log("Date selected:", this.selectedDate);
+      // Example data update:
+      this.chartData.labels = [
+        /* Your dynamic labels based on selectedDate */
+      ];
+      this.chartData.datasets[0].data = [
+        /* Your dynamic data based on selectedDate */
+      ];
     },
 
     showSaveDataDialog() {
       this.showSaveData = true;
+      this.formData.deviceName = this.deviceName;
       this.formData.waterLevel = this.DATASOIL; // Pre-fill waterLevel
       this.formData.waterOutput = this.formattedTotalWaterOutput; // Pre-fill waterOutput
       this.formData.date = this.getSelectedDate(); // Get date from calendar
     },
 
-    submitData () {
-      if (!this.formData.waterOutput || !this.formData.date || !this.formData.waterLevel ) {
+    submitData() {
+      if (
+        !this.formData.waterOutput ||
+        !this.formData.date ||
+        !this.formData.waterLevel ||
+        !this.formData.deviceName
+      ) {
         this.$q.notify({
           message: "All fields must be provided",
           color: "negative",
@@ -480,13 +497,15 @@ export default {
       }
 
       const dataToSend = {
+        deviceName: this.formData.deviceName,
         dailyOutput: this.formData.waterOutput,
         waterLevel: this.formData.waterLevel,
-        date: this.formData.date,  // Date from the calendar formatted as YYYY-MM-DD
+        date: this.formData.date, // Date from the calendar formatted as YYYY-MM-DD
       };
 
-      axios.post("http://localhost:3000/save-daily-data", dataToSend)
-        .then(response => {
+      axios
+        .post("http://localhost:3000/save-daily-data", dataToSend)
+        .then((response) => {
           if (response.status === 200) {
             console.log("Data saved successfully:", response.data);
             this.$q.notify({
@@ -500,8 +519,11 @@ export default {
             console.error("Save failed:", response);
           }
         })
-        .catch(error => {
-          console.error("Error during form submission:", error.response ? error.response.data : error.message);
+        .catch((error) => {
+          console.error(
+            "Error during form submission:",
+            error.response ? error.response.data : error.message
+          );
           this.$q.notify({
             message: "Error during form submission",
             color: "negative",
@@ -515,12 +537,12 @@ export default {
       // Get the selected date from the calendar
       const selectedDate = this.$refs.calendar.value;
       if (selectedDate) {
-        const localDate = new Date(selectedDate);  // Local time selected from the calendar
-        console.log("Local Date:", localDate);  // Log local date for debugging
-        const utcDate = new Date(localDate.toUTCString());  // Convert to UTC
-        console.log("UTC Date:", utcDate);  // Log UTC date for debugging
-        utcDate.setHours(0, 0, 0, 0);  // Ensure date is set to midnight in UTC
-        return utcDate;  // Return the UTC formatted date with 00:00:00 as midnight
+        const localDate = new Date(selectedDate); // Local time selected from the calendar
+        console.log("Local Date:", localDate); // Log local date for debugging
+        const utcDate = new Date(localDate.toUTCString()); // Convert to UTC
+        console.log("UTC Date:", utcDate); // Log UTC date for debugging
+        utcDate.setHours(0, 0, 0, 0); // Ensure date is set to midnight in UTC
+        return utcDate; // Return the UTC formatted date with 00:00:00 as midnight
       }
       return null;
     },
@@ -543,7 +565,9 @@ export default {
 
           // Format the total output for display
           this.formattedTotalWaterOutput = this.totalWaterOutput.toFixed(2); // Keep 2 decimal places
-          console.log(`Water output updated: ${this.formattedTotalWaterOutput} liters`);
+          console.log(
+            `Water output updated: ${this.formattedTotalWaterOutput} liters`
+          );
         }
       }, 1000); // Update every second (adjust as needed)
     },
@@ -567,27 +591,9 @@ export default {
     },
   },
 
-  // async updateTotalWaterOutput(newOutput) {
-  //   try {
-  //     const response = await axios.put(
-  //       "http://localhost:3000/history",
-  //       { totalWaterOutput: newOutput }
-  //     );
-  //     if (response.status === 200) {
-  //       console.log(response.data.message);
-  //       this.totalWaterOutput = newOutput;
-  //       // Add animation or other logic here as needed
-  //     }
-  //   } catch (error) {
-  //     console.error("Error updating history:", error);
-  //   }
-  // },
-
   async confirmReset() {
     try {
-      const response = await axios.delete(
-        "http://localhost:3000/history"
-      );
+      const response = await axios.delete("http://localhost:3000/history");
       if (response.status === 200) {
         console.log(response.data.message);
         this.totalWaterOutput = 0.0;
@@ -709,8 +715,8 @@ export default {
 }
 
 .save-button {
-  background-color: white;  /* Button background color set to white */
-  color: black;             /* Font color set to black */
+  background-color: white; /* Button background color set to white */
+  color: black; /* Font color set to black */
   border-radius: 8px;
   padding: 12px 24px;
   font-size: 1.1rem;
@@ -724,11 +730,10 @@ export default {
 
 .save-button:hover {
   background-color: #f0f0f0; /* Lighter shade on hover */
-  transform: scale(1.05);     /* Slight scaling on hover */
+  transform: scale(1.05); /* Slight scaling on hover */
 }
 
 .save-button .q-icon {
-  margin-right: 8px;          /* Spacing between icon and text */
+  margin-right: 8px; /* Spacing between icon and text */
 }
-
 </style>

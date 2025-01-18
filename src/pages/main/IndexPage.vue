@@ -8,7 +8,9 @@
     <div v-if="$q.platform.is.mobile">
       <!-- title page -->
       <div>
-        <div class="text text-h6 text-white text-weight-bold">Hello, User</div>
+        <div class="text text-h6 text-white text-weight-bold">
+          Hello, {{ loggedInUser }}
+        </div>
         <div class="text text-h6 text-white q-mb-md text-caption text-blue-2">
           Welcome back to home
         </div>
@@ -143,6 +145,10 @@ export default {
         console.error("Error parsing message:", error);
       }
     });
+    const username = localStorage.getItem("loggedInUser");
+    if (username) {
+      this.loggedInUser = username;
+    }
   },
 
   computed: {
