@@ -6,7 +6,7 @@
   <q-layout view="lHh Lpr lFf">
     <q-header>
       <q-toolbar class="bg-primary-1 text-white text text-weight-bold text-h6"
-        >Smart Water Tank</q-toolbar
+        >TankBuddy</q-toolbar
       >
     </q-header>
     <q-footer> </q-footer>

@@ -9,14 +9,14 @@
   />
 
   <q-page class="bg-image flex flex-center">
-    <img
+    <!-- <img
       src="~/src/assets/bglogin1.jpeg"
       alt="Gambar"
       class="absolute-full"
-      height="800"
+      height="900"
       width="100%"
       style="opacity: 0.5"
-    />
+    /> -->
 
     <!-- untuk tampilan mobile -->
 
@@ -25,7 +25,7 @@
         <div class="row justify-center">
           <div class="col-12 col-md-6">
             <div class="col-6 flex flex-center">
-              <q-card class="q-pa-md bg-primary-9 text-primary cardd no-shadow">
+              <q-card class="q-pa-md bg-grey-2 text-primary cardd no-shadow">
                 <!-- keterangan card Login -->
                 <div class="text_login text-h5 text-center">Login</div>
                 <div class="text-caption text-center">
@@ -64,7 +64,7 @@
                     <template v-slot:append>
                       <q-icon
                         :name="isPwd ? 'visibility_off' : 'visibility'"
-                        class="cursor-pointer text-white"
+                        class="cursor-pointer text-primary"
                         @click="isPwd = !isPwd"
                       />
                     </template>
@@ -87,7 +87,15 @@
     <div class="absolute-bottom q-pa-md">
       <q-footer class="bg-primary-9 text-white">
         <q-toolbar>
-          <q-toolbar-title class="text-center">Copyright 2023</q-toolbar-title>
+          <q-toolbar-title class="text-center text text-caption"
+            ><a
+              class="text-white"
+              href="https://www.linkedin.com/in/muhammad-ilham-alparsy-a0a539290/"
+            >
+              TankBuddy by iamalparsyy</a
+            >
+            All rights reserved</q-toolbar-title
+          >
         </q-toolbar>
       </q-footer>
     </div>
@@ -128,7 +136,7 @@ export default {
         localStorage.setItem("loggedInUser", this.username);
       } else {
         Notify.create({
-          message: "Username atau Password yang Valid",
+          message: "Masukkan Username atau Password yang Valid",
           position: "top",
           textColor: "white",
           spinner: QSpinnerPie,
