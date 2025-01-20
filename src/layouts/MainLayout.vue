@@ -31,21 +31,21 @@
     </q-footer>
 
     <q-dialog v-model="isDialogOpen" persistent>
-      <q-card>
+      <q-card class="bg-primary full-width">
         <q-card-section class="row items-center q-pb-none">
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn icon="close" color="white" flat round dense v-close-popup />
         </q-card-section>
 
         <q-card-section class="text-center">
           <img
             src="https://i.pinimg.com/736x/49/34/f7/4934f76b7c8d0f0c290707b29dbc322e.jpg"
             alt="Avatar"
-            style="width: 50px; height: 50px; border-radius: 50%"
+            style="width: 80px; height: 80px; border-radius: 50%"
           />
-          <p class="q-mt-md">
-            Ini adalah dialog yang muncul setelah mengklik avatar.
-          </p>
+          <div class="q-mt-md text-white text">
+            <p>Hai, {{ loggedInUser }}</p>
+          </div>
         </q-card-section>
 
         <q-card-actions align="center">
@@ -89,6 +89,12 @@ export default {
       // Arahkan pengguna ke halaman login
       this.$router.push("/");
     },
+  },
+  mounted() {
+    const username = localStorage.getItem("loggedInUser");
+    if (username) {
+      this.loggedInUser = username;
+    }
   },
 };
 </script>

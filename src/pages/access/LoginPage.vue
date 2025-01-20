@@ -27,7 +27,7 @@
             <div class="col-6 flex flex-center">
               <q-card class="q-pa-md bg-grey-2 text-primary cardd no-shadow">
                 <!-- keterangan card Login -->
-                <div class="text_login text-h5 text-center">Login</div>
+                <div class="text_login text-h5 text-left">Login</div>
                 <div class="text-caption text-center">
                   Masukkan username dan password anda
                 </div>
@@ -69,6 +69,15 @@
                       />
                     </template>
                   </q-input>
+                  <div class="text-caption text-right">
+                    <a
+                      href="https://wa.me/62895619954470?text=Halo%20Admin,%20saya%20lupa%20password%20akun%20TankBuddy%20saya."
+                      target="_blank"
+                      style="text-decoration: none; color: inherit"
+                    >
+                      Lupa Password
+                    </a>
+                  </div>
                   <div class="q-mt-md">
                     <q-btn
                       label="Submit"
