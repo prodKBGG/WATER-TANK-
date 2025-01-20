@@ -219,7 +219,7 @@ export default {
       buttonStatus: false,
       totalWaterOutput: 0.0, // Track the total water output
       lastUpdateTime: Date.now(), // To calculate time deltas
-      formattedTotalWaterOutputData: "",
+      formattedTotalWaterOutputData: "23",
       chartData: {
         labels: [], // Chart labels will be populated based on your data
         datasets: [
