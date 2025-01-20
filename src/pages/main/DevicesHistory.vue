@@ -102,7 +102,7 @@ export default {
             ...item,
             totalWaterTank: item.waterLevel, // Map the correct field if needed
             deviceName: item.deviceName,
-            totalWaterOutput: item.totalWaterOutput,
+            totalWaterOutput: item.dailyOutput,
             date: item.date,
           }));
         }

@@ -22,7 +22,7 @@ mongoose
 const dailyWaterOutputSchema = new mongoose.Schema(
   {
     deviceName: String,
-    dailyOutput: Number,
+    formattedTotalWaterOutput: Number,
     waterLevel: Number,
     date: { type: Date, unique: true }, // Added 'unique' to prevent duplicate dates
   },

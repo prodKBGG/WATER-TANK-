@@ -205,7 +205,7 @@ export default {
   data() {
     return {
       deviceName: "N-01",
-      DATASOIL: "",
+      DATASOIL: "20",
       WATERLEVEL: "",
       WATERFLOW: "0",
       client: null,
@@ -476,7 +476,7 @@ export default {
       this.showSaveData = true;
       this.formData.deviceName = this.deviceName;
       this.formData.waterLevel = this.DATASOIL; // Pre-fill waterLevel
-      this.formData.waterOutput = this.formattedTotalWaterOutput; // Pre-fill waterOutput
+      this.formData.dailyOutput = this.totalWaterOutput; // Pre-fill waterOutput
       this.formData.date = this.getSelectedDate(); // Get date from calendar
     },
 
